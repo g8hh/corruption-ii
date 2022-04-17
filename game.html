@@ -1,0 +1,1254 @@
+<html>
+	<head>
+<meta charset="utf-8" />
+		<script type="text/javascript" src="JS/jquery.js"></script>
+		<script type="text/javascript" src="JS/jquery.fancybox.js"></script>
+		<script type="text/javascript" src="JS/phaser.js"></script>
+        <script type="text/javascript" src="JS/random.js"></script>
+		<link rel="stylesheet" href="CSS/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
+		<title>Corruption</title>
+		<style>
+		@font-face {
+			font-family: "myfont";
+			src: url("font.woff") format('woff');
+		}
+		body {
+		    font-family: myfont
+			-webkit-user-select: none; /* Safari */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE10+/Edge */
+			user-select: none; /* Standard */
+            width: 800px;
+            margin: 0 auto;
+            position: relative;
+		}
+
+		a {
+			color:#0082FF;
+		}
+		a:hover {
+			color:#FF510E;
+		}
+		a:link {
+		    text-decoration: none;
+		}
+
+		a:visited {
+		    text-decoration: none;
+		}
+
+		a:hover {
+		    text-decoration: none;
+		}
+
+		a:active {
+		    text-decoration: none;
+		}
+		#data{
+			text-align: center;
+			font-size: 36px;
+		}
+		#fancybox-skin, .fancybox-skin, .fancybox-inner {
+		 	border-color: #222222 !important; /* or whatever */
+			background-color: #222222 !important;
+		}
+		#mute{
+			width:16px;
+			height:16px;
+			background-image: url(images/unmute.png);
+			position: fixed;
+			top: 5px;
+			left: 5px;
+			cursor: pointer;
+		}
+		.muted{
+			background-image: url(images/mute.png) !important;
+		}
+
+		.player0-0{
+			color: #0082ff;
+		}
+
+		.player1-0{
+			color: #ff00e0;
+		}
+
+		.player2-0{
+			color: #ff5c00;
+		}
+
+		.player3-0{
+			color: #ffec00;
+		}
+
+		.player4-0{
+			color: #64ff00;
+		}
+
+		.player5-0{
+			color: #8214ff;
+		}
+
+		.player0-1{
+			color: #0082ff;
+		}
+
+		.player1-1{
+			color: #ff5c00;
+		}
+
+		.player2-1{
+			color: #0e00ff;
+		}
+
+		.player3-1{
+			color: #ff930e;
+		}
+
+		.player4-1{
+			color: #00f793;
+		}
+
+		.player5-1{
+			color: #e90d44;
+		}
+
+		.team1{
+			color: #00f2ff;
+			font-weight: bold;
+			opacity: .9;
+		}
+
+		.team2{
+			color: #ffb80e;
+			font-weight: bold;
+			opacity: .9;
+		}
+
+		ul{
+		    display: table;
+		    table-layout: fixed;
+		    width: 100%;
+		    -moz-box-sizing: border-box;
+		    box-sizing: border-box;
+		}
+
+		li{
+		    text-align: center;
+		    display: table-row;
+		}
+		</style>
+		<script>
+
+			game = new Phaser.Game(510, 590, Phaser.CANVAS, 'wrapper');
+
+            var tiles;
+            var turn = "p1";
+			var url = new URL(window.location.href);
+            var gameID = url.searchParams.get("gameID");
+			var boardID = url.searchParams.get("boardID");
+			var win = url.searchParams.get("win");
+			var sound = url.searchParams.get("sound");
+			var disabled = url.searchParams.get("off");
+			var teams = url.searchParams.get("team");
+			var aggr1 = url.searchParams.get("aggr1");
+			var aggr2 = url.searchParams.get("aggr2");
+			var audio = new Audio('click2.wav');
+			var audio2 = new Audio('switch.wav');
+			var turretCounter = 0;
+			var turnRunning = false;
+			var turnCheck = true;
+			var converting = false;
+			var converting2 = false;
+			var debugTile;
+			var playerTiles = 1;
+			var enemyTiles = 1;
+			var testArray = [];
+			var tileScore = [];
+			var tileScoreView = [];
+			var boards = [[]];
+			var winner = 0;
+			var gameOver = false;
+			var frame = 0;
+			var players = [];
+			var resetButton;
+			var oldTeams = teams;
+			var previousTurn;
+
+			tileScore["p1"] = 1;
+			tileScore["p2"] = 1;
+			tileScore["p3"] = 1;
+			tileScore["p4"] = 1;
+			tileScore["p5"] = 1;
+			tileScore["p6"] = 1;
+
+			if(sound == null || sound == 1){
+				sound = true;
+			}else{
+				sound = false;
+			}
+			if(win == null){
+				win = 1;
+			}
+			if(boardID == null){
+				boardID = 1;
+			}
+			if(disabled == null){
+				disabled = false;
+			}
+
+			boards["h-1-l"] = [];
+			boards["h-1-l"]["emptyTiles"] = ["-1"];
+			boards["h-1-l"]["size"] = 11;
+			boards["h-1-l"]["shape"] = "hex";
+			boards["h-1-l"]["startPoints"] = [363, 330, 374, 341, 352, 385];
+			boards["h-1-l"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-1-l"]["boardID"] = 0;
+
+			boards["h-1-m"] = [];
+			boards["h-1-m"]["emptyTiles"] = ["-1"];
+			boards["h-1-m"]["size"] = 8;
+			boards["h-1-m"]["shape"] = "hex";
+			boards["h-1-m"]["startPoints"] = [192, 168, 200, 176, 184, 208];
+			boards["h-1-m"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-1-m"]["boardID"] = 1;
+
+			boards["h-1-s"] = [];
+			boards["h-1-s"]["emptyTiles"] = ["-1"];
+			boards["h-1-s"]["size"] = 5;
+			boards["h-1-s"]["shape"] = "hex";
+			boards["h-1-s"]["startPoints"] = [75, 60, 80, 65, 70, 85];
+			boards["h-1-s"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-1-s"]["boardID"] = 2;
+
+			boards["s-1-l"] = [];
+			boards["s-1-l"]["emptyTiles"] = ["-1"];
+			boards["s-1-l"]["size"] = "large";
+			boards["s-1-l"]["shape"] = "rectangle";
+			boards["s-1-l"]["startPoints"] = [0, 219, 10, 209];
+			boards["s-1-l"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-1-l"]["boardID"] = 3;
+
+			boards["s-1-m"] = [];
+			boards["s-1-m"]["emptyTiles"] = ["-1"];
+			boards["s-1-m"]["size"] = "medium";
+			boards["s-1-m"]["shape"] = "rectangle";
+			boards["s-1-m"]["startPoints"] = [0, 127, 7, 120];
+			boards["s-1-m"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-1-m"]["boardID"] = 4;
+
+			boards["s-1-s"] = [];
+			boards["s-1-s"]["emptyTiles"] = ["-1"];
+			boards["s-1-s"]["size"] = "small";
+			boards["s-1-s"]["shape"] = "rectangle";
+			boards["s-1-s"]["startPoints"] = [0, 49, 4, 45];
+			boards["s-1-s"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-1-s"]["boardID"] = 5;
+
+			boards["h-3-l"] = [];  // hourglass
+			boards["h-3-l"]["emptyTiles"] = "375,376,377,378,379,380,381,382,383,384,319,260,207,318,259,206,258,316,317,315,257,205,204,256,314,313,312,311,253,201,202,254,255,203,160,159,158,157,156,155,115,116,117,118,119,84,83,82,81,53,54,55,32,31,15,351,350,349,348,347,346,345,344,343,342,281,282,283,284,285,286,287,288,289,233,232,231,230,229,228,227,226,177,178,179,180,181,182,183,139,138,137,136,135,134,97,98,99,100,101,69,68,67,66,41,42,43,23,22,9".split(",");
+			boards["h-3-l"]["size"] = 11;
+			boards["h-3-l"]["shape"] = "hex";
+			boards["h-3-l"]["startPoints"] = [363, 330];
+			boards["h-3-l"]["startRotations"] = [-30, 150];
+			boards["h-3-l"]["boardID"] = 6;
+
+			boards["h-2-l"] = [];  // doughnut
+			boards["h-2-l"]["emptyTiles"] = "108,102,96,90,120,114,113,112,111,110,109,107,106,105,104,103,101,100,99,98,97,95,94,93,92,91,125,124,123,122,121,119,118,117,116,115,80,79,78,77,76,75,74,73,72,71,70,69,68,67,66,65,64,63,62,61,60,89,88,87,86,85,84,83,82,81,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,59,58,57,56,55,54,53,30,29,28,27,26,25,24,23,22,21,20,19,18,35,34,33,32,31,14,13,12,11,10,9,8,7,6,17,16,15,4,3,2,1,0,5,396".split(",");
+			boards["h-2-l"]["size"] = 11;
+			boards["h-2-l"]["shape"] = "hex";
+			boards["h-2-l"]["startPoints"] = [363, 330, 374, 341, 352, 385];
+			boards["h-2-l"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-2-l"]["boardID"] = 7;
+
+			boards["h-4-l"] = [];  // rooms
+			boards["h-4-l"]["emptyTiles"] = "370,307,250,155,156,389,323,263,160,159,158,157,337,277,223,134,135,356,293,236,139,138,137,136,117,82,83,54,31,32,15,4,5,396,2,1,9,23,22,42,68,67,99".split(",");
+			boards["h-4-l"]["size"] = 11;
+			boards["h-4-l"]["shape"] = "hex";
+			boards["h-4-l"]["startPoints"] = [363, 330, 374, 341, 352, 385];
+			boards["h-4-l"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-4-l"]["boardID"] = 8;
+
+			boards["h-3-m"] = [];  // hourglass
+			boards["h-3-m"]["emptyTiles"] = "201,155,202,203,204,205,206,207,160,119,118,117,116,115,156,157,159,158,84,83,82,81,53,54,55,32,31,15,183,139,101,69,43,23,9,22,41,66,97,134,177,178,179,180,181,183,182,138,100,68,42,67,98,135,136,137,99".split(",");
+			boards["h-3-m"]["size"] = 8;
+			boards["h-3-m"]["shape"] = "hex";
+			boards["h-3-m"]["startPoints"] = [192, 168];
+			boards["h-3-m"]["startRotations"] = [-30, 150];
+			boards["h-3-m"]["boardID"] = 9;
+
+			boards["h-2-m"] = [];  // doughnut
+			boards["h-2-m"]["emptyTiles"] = "27,24,21,18,33,30,29,28,26,25,23,22,20,19,35,34,32,31,14,13,12,11,10,9,8,7,6,17,16,15,5,4,3,2,1,0,216".split(",");
+			boards["h-2-m"]["size"] = 8;
+			boards["h-2-m"]["shape"] = "hex";
+			boards["h-2-m"]["startPoints"] = [192, 168, 200, 176, 184, 208];
+			boards["h-2-m"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-2-m"]["boardID"] = 10;
+
+			boards["h-4-m"] = [];  // rooms
+			boards["h-4-m"]["emptyTiles"] = "197,152,81,82,211,163,84,83,187,142,69,68,67,66,131,173,42,23,22,9,2,1,500,4,5,15,31,32,54".split(",");
+			boards["h-4-m"]["size"] = 8;
+			boards["h-4-m"]["shape"] = "hex";
+			boards["h-4-m"]["startPoints"] = [192, 168, 200, 176, 184, 208];
+			boards["h-4-m"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-4-m"]["boardID"] = 11;
+
+			boards["h-3-s"] = [];  // hourglass
+			boards["h-3-s"]["emptyTiles"] = "81,82,83,84,55,54,53,31,32,15,69,43,23,9,22,66,67,68,42,41".split(",");
+			boards["h-3-s"]["size"] = 5;
+			boards["h-3-s"]["shape"] = "hex";
+			boards["h-3-s"]["startPoints"] = [75, 60];
+			boards["h-3-s"]["startRotations"] = [-30, 150];
+			boards["h-3-s"]["boardID"] = 12;
+
+			boards["h-2-s"] = [];  // doughnut
+			boards["h-2-s"]["emptyTiles"] = "12,13,14,15,16,17,6,7,8,9,10,11,2,1,0,5,4,90,3".split(",");
+			boards["h-2-s"]["size"] = 5;
+			boards["h-2-s"]["shape"] = "hex";
+			boards["h-2-s"]["startPoints"] = [75, 60, 80, 65, 70, 85];
+			boards["h-2-s"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-2-s"]["boardID"] = 13;
+
+			boards["h-4-s"] = [];  // rooms
+			boards["h-4-s"]["emptyTiles"] = "72,45,63,39,9,2,1,4,5,87,57,78,51,15,90".split(",");
+			boards["h-4-s"]["size"] = 5;
+			boards["h-4-s"]["shape"] = "hex";
+			boards["h-4-s"]["startPoints"] = [75, 60, 80, 65, 70, 85];
+			boards["h-4-s"]["startRotations"] = [-30, 150, -90, 90, 30, -150];
+			boards["h-4-s"]["boardID"] = 14;
+
+			boards["s-2-l"] = [];  // box
+			boards["s-2-l"]["emptyTiles"] = "252,36,253,257,40,256,39,255,38,254,37,262,272,372,362,179,373,180,374,181,375,182,376,183,377,367,357,347,337,327,317,307,297,287,277,267,282,292,302,312,322,332,342,352,168,157,146,135,124,113,102,91,80,69,58,47,263,273,283,293,303,313,323,333,343,353,363,169,158,136,147,125,114,103,92,81,70,59,48,264,60,49,265,50,72,61,266,51,62,276,73,71,274,294,82,284,275,285,83,286,84,296,95,106,117,128,139,150,161,172,366,171,365,159,170,364,354,344,334,324,314,304,93,295,305,105,94,306,316,326,336,346,346,346,346,356,149,160,355,345,325,335,127,138,116,315,104,115,126,137,148".split(",");
+			boards["s-2-l"]["size"] = "large";
+			boards["s-2-l"]["shape"] = "rectangle";
+			boards["s-2-l"]["startPoints"] = [0, 219, 10, 209];
+			boards["s-2-l"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-2-l"]["boardID"] = 15;
+
+			boards["s-3-l"] = [];  // X
+			boards["s-3-l"]["emptyTiles"] = "8,2,222,14,233,26,244,38,245,28,236,18,227,7,226,6,17,225,235,5,16,27,234,224,15,4,223,3,44,260,56,271,68,282,165,360,155,351,145,342,135,333,323,313,303,293,80,91,102,113,124,332,312,322,302,292,79,90,101,112,123,134,341,331,321,311,301,291,281,67,78,89,111,100,122,133,144,350,340,330,320,310,300,290,280,270,55,66,77,88,99,110,121,132,143,154,211,402,201,393,191,384,181,385,193,396,205,407,217,216,406,204,395,192,394,404,202,213,403,212,214,203,405,215,175,369,163,358,151,347,139,336,326,316,306,296,84,287,74,278,64,269,54,65,76,87,98,109,120,131,142,153,164,359,349,339,329,319,309,299,289,279,75,86,97,108,119,130,141,152,348,338,328,318,308,298,288,85,96,107,118,129,140,337,327,317,307,297,95,106,117,128".split(",");
+			boards["s-3-l"]["size"] = "large";
+			boards["s-3-l"]["shape"] = "rectangle";
+			boards["s-3-l"]["startPoints"] = [0, 219, 10, 209];
+			boards["s-3-l"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-3-l"]["boardID"] = 16;
+
+			boards["s-4-l"] = [];  // rooms
+			boards["s-4-l"]["emptyTiles"] = "27,244,37,245,39,267,63,262,57,271,67,280,290,300,192,384,180,362,156,351,144,340,330,320,385,182,367,162,358,152,349,339,329,309,299,289,75,278,107,118,317,106,117,316,105,116,315,104,115,314,103,114,313,102,113,312,101,112".split(",");
+			boards["s-4-l"]["size"] = "large";
+			boards["s-4-l"]["shape"] = "rectangle";
+			boards["s-4-l"]["startPoints"] = [0, 219, 10, 209];
+			boards["s-4-l"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-4-l"]["boardID"] = 17;
+
+			boards["s-2-m"] = [];  // box
+			boards["s-2-m"]["emptyTiles"] = "26,34,42,50,58,66,74,98,29,101,209,100,208,99,207,90,82,151,27,152,28,153,37,45,53,61,69,77,85,93,202,195,188,181,174,167,160,36,44,52,60,68,76,84,92,201,194,187,180,173,166,159,35,43,51,59,67,83,91,200,193,75,186,179,172,165,158".split(",");
+			boards["s-2-m"]["size"] = "medium";
+			boards["s-2-m"]["shape"] = "rectangle";
+			boards["s-2-m"]["startPoints"] = [0, 127, 7, 120];
+			boards["s-2-m"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-2-m"]["boardID"] = 18;
+
+			boards["s-3-m"] = [];  // X
+			boards["s-3-m"]["emptyTiles"] = "2,130,11,5,132,12,138,131,3,4,31,155,38,103,211,203,85,161,45,53,61,69,77,125,230,116,222,115,228,122,123,229,124,94,96,205,89,199,82,74,66,58,50,42,157,33,149,24,32,40,48,56,64,72,80,88,198,191,184,177,170,163,156,41,49,164,171,178,57,65,73,81,192,185,196,86,204,95,87,79,71,63,55,47,39,162,46,168,175,182,189,78,197,190,183,176,169,54,62,70".split(",");
+			boards["s-3-m"]["size"] = "medium";
+			boards["s-3-m"]["shape"] = "rectangle";
+			boards["s-3-m"]["startPoints"] = [0, 127, 7, 120];
+			boards["s-3-m"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-3-m"]["boardID"] = 19;
+
+			boards["s-4-m"] = [];  // rooms
+			boards["s-4-m"]["emptyTiles"] = "145,28,153,46,169,27,151,41,163,215,99,207,100,209,86,197,81,191,184,170,176,190,58,66,179,59,67,180,60,68,181,61,69".split(",");
+			boards["s-4-m"]["size"] = "medium";
+			boards["s-4-m"]["shape"] = "rectangle";
+			boards["s-4-m"]["startPoints"] = [0, 127, 7, 120];
+			boards["s-4-m"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-4-m"]["boardID"] = 20;
+
+			boards["s-2-s"] = [];  // box
+			boards["s-2-s"]["emptyTiles"] = "11,59,12,60,13,18,23,28,33,38,76,37,75,36,31,26,21,16,63,17,64,68,22,67,71,27,72,32".split(",");
+			boards["s-2-s"]["size"] = "small";
+			boards["s-2-s"]["shape"] = "rectangle";
+			boards["s-2-s"]["startPoints"] = [0, 49, 4, 45];
+			boards["s-2-s"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-2-s"]["boardID"] = 21;
+
+			boards["s-3-s"] = [];  // X
+			boards["s-3-s"]["emptyTiles"] = "1,51,7,2,52,3,48,84,42,47,83,46,30,15,19,34,73,28,23,69,65,24,29,70,26,21,62,66,20,25".split(",");
+			boards["s-3-s"]["size"] = "small";
+			boards["s-3-s"]["shape"] = "rectangle";
+			boards["s-3-s"]["startPoints"] = [0, 49, 4, 45];
+			boards["s-3-s"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-3-s"]["boardID"] = 22;
+
+			boards["s-4-s"] = [];  // rooms
+			boards["s-4-s"]["emptyTiles"] = "7,56,61,65,42,80,77,73,79,74,70,62,55,58,67,22,27,68".split(",");
+			boards["s-4-s"]["size"] = "small";
+			boards["s-4-s"]["shape"] = "rectangle";
+			boards["s-4-s"]["startPoints"] = [0, 49, 4, 45];
+			boards["s-4-s"]["startRotations"] = [-30, 150, 30, -150];
+			boards["s-4-s"]["boardID"] = 23;
+
+			players['p1'] = [];
+			players['p2'] = [];
+			players['p3'] = [];
+			players['p4'] = [];
+			players['p5'] = [];
+			players['p6'] = [];
+
+			players['p1']["type"] = 'hard'; // N  // NW
+			players['p1']["image"] = 'p1';
+			players['p1']["startPoint"] = 0;
+			players['p1']["active"] = false;
+
+			players['p2']["type"] = 'easy'; // S  // SE
+			players['p2']["image"] = 'p2';
+			players['p2']["startPoint"] = 1;
+			players['p2']["active"] = false;
+
+			players['p3']["type"] = 'hard'; // NW // NE
+			players['p3']["image"] = 'p3';
+			players['p3']["startPoint"] = 2;
+			players['p3']["active"] = false;
+
+			players['p4']["type"] = 'easy'; // SE  // SW
+			players['p4']["image"] = 'p4';
+			players['p4']["startPoint"] = 3;
+			players['p4']["active"] = false;
+
+			players['p5']["type"] = 'hard'; // NE
+			players['p5']["image"] = 'p5';
+			players['p5']["startPoint"] = 4;
+			players['p5']["active"] = false;
+
+			players['p6']["type"] = 'easy'; // SW
+			players['p6']["image"] = 'p6';
+			players['p6']["startPoint"] = 5;
+			players['p6']["active"] = false;
+
+			if(teams == 0){
+				players['p1']["team"] = 1;
+				players['p2']["team"] = 2;
+				players['p3']["team"] = 3;
+				players['p4']["team"] = 4;
+				players['p5']["team"] = 5;
+				players['p6']["team"] = 6;
+			}else if(teams == 1){
+				players['p1']["team"] = 1;
+				players['p2']["team"] = 2;
+				players['p3']["team"] = 1;
+				players['p4']["team"] = 2;
+				players['p5']["team"] = 1;
+				players['p6']["team"] = 2;
+			}else{
+				players['p1']["team"] = 1;
+				players['p2']["team"] = 2;
+				players['p2']["startPoint"] = 1;
+				players['p3']["startPoint"] = 11;
+				players['p4']["startPoint"] = 11;
+				players['p5']["startPoint"] = 11;
+				players['p6']["startPoint"] = 11;
+			}
+
+			if(aggr1 == 1){
+				players['p1']["type"] = 'player';
+				players['p3']["type"] = 'player';
+				players['p5']["type"] = 'player';
+			}else if(aggr1 == 2){
+				players['p1']["type"] = 'easy';
+				players['p3']["type"] = 'easy';
+				players['p5']["type"] = 'easy';
+			}else if(aggr1 == 3){
+				players['p1']["type"] = 'medium';
+				players['p3']["type"] = 'medium';
+				players['p5']["type"] = 'medium';
+			}else if(aggr1 == 4){
+				players['p1']["type"] = 'hard';
+				players['p3']["type"] = 'hard';
+				players['p5']["type"] = 'hard';
+			}
+
+			if(aggr2 == 1){
+				players['p2']["type"] = 'player';
+				players['p4']["type"] = 'player';
+				players['p6']["type"] = 'player';
+			}else if(aggr2 == 2){
+				players['p2']["type"] = 'easy';
+				players['p4']["type"] = 'easy';
+				players['p6']["type"] = 'easy';
+			}else if(aggr2 == 3){
+				players['p2']["type"] = 'medium';
+				players['p4']["type"] = 'medium';
+				players['p6']["type"] = 'medium';
+			}else if(aggr2 == 4){
+				players['p2']["type"] = 'hard';
+				players['p4']["type"] = 'hard';
+				players['p6']["type"] = 'hard';
+			}
+
+			main_state = {
+				preload : function() {
+					game.load.image('tile', 'images/tile3.png');
+					if(teams == -1 || boardID == "h-3-l" || boardID == "h-3-m" || boardID == "h-3-s"){
+						game.load.spritesheet('p1', 'images/A1.png', 32, 32);
+						game.load.spritesheet('p2', 'images/A3.png', 32, 32);
+						teams = 0;
+					}else if(teams == 1){
+						game.load.spritesheet('p1', 'images/T1.png', 32, 32);
+						game.load.spritesheet('p2', 'images/T2.png', 32, 32);
+						game.load.spritesheet('p3', 'images/T3.png', 32, 32);
+						game.load.spritesheet('p4', 'images/T4.png', 32, 32);
+						game.load.spritesheet('p5', 'images/T5.png', 32, 32);
+						game.load.spritesheet('p6', 'images/T6.png', 32, 32);
+					}else if(teams == 0){
+						game.load.spritesheet('p1', 'images/A1.png', 32, 32);
+						game.load.spritesheet('p2', 'images/A2.png', 32, 32);
+						game.load.spritesheet('p3', 'images/A3.png', 32, 32);
+						game.load.spritesheet('p4', 'images/A4.png', 32, 32);
+						game.load.spritesheet('p5', 'images/A5.png', 32, 32);
+						game.load.spritesheet('p6', 'images/A6.png', 32, 32);
+					}
+					game.load.image("bg", "images/bg.png");
+					game.load.image("blank", "images/blank.png");
+
+					game.load.spritesheet('reset', 'images/reset.png', 16, 16);
+				},
+				create : function() {
+					game.physics.startSystem(Phaser.Physics.ARCADE);
+					game.add.tileSprite(0, 0, 1000, 600, 'bg');
+
+					resetButton = game.add.button(0, 561, 'reset', restart, this, 0, 0, 0);
+					resetButton.events.onInputOver.add(animateButton, this);
+					resetButton.events.onInputOut.add(unanimateButton, this);
+					resetButton.animations.add("over", [2,3,4,5], 10, true);
+					resetButton.fixedToCamera = true;
+
+				},
+				update : function() {
+
+					if(frame == 1){
+						frame++;
+						tiles.forEach(function(tile){
+							findNeighbours(tile.tileIndex);
+						});
+					}
+
+					if(frame == 0){
+						frame++;
+						drawBoard();
+					}
+
+					if (!gameOver && !disabled){ // GAME IS RUNNING
+						tiles.forEach(function(tile){
+							if (typeof tile.turret !== 'undefined') {
+								if(tile.turret.angle != -90 && tile.turret.angle != -30 && tile.turret.angle != -150 && tile.turret.angle != 90 && tile.turret.angle != 30 && tile.turret.angle != 150){
+									tile.turret.angle = Math.round(tile.turret.angle + 10);
+									if(tile.turret.angle == -90 || tile.turret.angle == -30 || tile.turret.angle == -150 || tile.turret.angle == 90 || tile.turret.angle == 30 || tile.turret.angle == 150){
+										converting = true;
+										converting2 = true;
+									}
+								}
+							}
+						});
+
+						if(converting2 && converting){  // CASCADE
+							checkTiles();
+						}
+
+						if(turnCheck && players[turn].type != "player"){  // FIRE AN AI MOVE
+							turnCheck = false;
+							setTimeout(function () {
+						        tileAction(findMove());
+						    }, 1000);
+						}
+
+
+						if(winner != 0){
+							gameOver = true;
+							if(teams != 1 || boardID == 6 || boardID == 9 || boardID == 12){
+								if(winner == "team1" || winner == "team2"){
+									winner = previousTurn;
+								}
+								var player = players[winner];
+								var playerText = ""
+								var divClass = "player" + player["startPoint"] + "-" + teams;
+
+								if(player["type"] != "player"){
+									playerText = "A.I. (" + player["type"] + ")";
+								}else{
+									playerText = "Player " + (player["startPoint"] + 1);
+								}
+							}else{
+								divClass = winner;
+								if(winner == "team1"){
+									playerText = "Team A"
+								}else{
+									playerText = "Team B"
+								}
+							}
+
+							$("#winnerNotice").addClass(divClass);
+							$("#winnerNotice").html(playerText + " Wins!");
+							$("#inline").click();
+						}
+					}
+					generateScoreBoard();
+				},
+				render: function()
+				{
+				},
+				newGame : function() {
+				},
+			};
+			game.state.add('main', main_state);
+			game.state.start('main');
+
+			//plays reset button animation
+			function animateButton(){
+				resetButton.play("over");
+			}
+
+			//stops reset button animation and resets to first frame
+			function unanimateButton(){
+			   resetButton.animations.stop(null, false);
+			   resetButton.frame = 0;
+		   }
+
+		   function restart(){
+			   location.reload();
+		   }
+
+			function generateScoreBoard(){
+				var board = "<ul style='height:100%; margin: 0; padding-left: 0px;'>";
+
+				tileScoreView["p1"] = tileScore["p1"];
+				tileScoreView["p2"] = tileScore["p2"];
+				tileScoreView["p3"] = tileScore["p3"];
+				tileScoreView["p4"] = tileScore["p4"];
+				tileScoreView["p5"] = tileScore["p5"];
+				tileScoreView["p6"] = tileScore["p6"];
+
+				tileScoreView["t1"] = (tileScore["p1"] + tileScore["p3"] + tileScore["p5"]);
+				tileScoreView["t2"] = (tileScore["p2"] + tileScore["p4"] + tileScore["p6"]);
+
+				if(win == 1){
+					tileScoreView["p1"] = (Math.round(tileScoreView["p1"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["p2"] = (Math.round(tileScoreView["p2"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["p3"] = (Math.round(tileScoreView["p3"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["p4"] = (Math.round(tileScoreView["p4"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["p5"] = (Math.round(tileScoreView["p5"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["p6"] = (Math.round(tileScoreView["p6"]/turretCounter * 1000) / 10) + "%";
+
+					tileScoreView["t1"] = (Math.round(tileScoreView["t1"]/turretCounter * 1000) / 10) + "%";
+					tileScoreView["t2"] = (Math.round(tileScoreView["t2"]/turretCounter * 1000) / 10) + "%";
+				}
+
+				if(teams != 1 || boardID == 6 || boardID == 9 || boardID == 12){
+
+					for (var player in players){
+						var underline = "";
+						if(player != turn){
+							underline = "style='opacity:.6;'";
+						}
+						if(tileScoreView[player] == 0 || tileScoreView[player] == "0%"){
+							underline = "style='opacity:.4;text-decoration:line-through;'";
+						}
+						var player = players[player];
+						var divClass = "player" + player["startPoint"] + "-" + teams;
+						if(oldTeams == -1 || boardID == 6 || boardID == 9 || boardID == 12){
+							if(player["startPoint"] == 0){
+								divClass = "player" + player["startPoint"] + "-" + teams;
+							}else{
+								divClass = "player2-" + teams;
+							}
+						}
+						if(player["type"] != "empty" && player["active"]){
+							var score = tileScoreView["p" + (player["startPoint"] + 1)];
+							if(player["type"] != "player"){
+								board += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'>A.I. (" + player["type"] + "): </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+							}else{
+								board += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'  class='" + divClass + "'>Player: </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+							}
+						}
+					}
+				}else{
+					var team1 = "<li class='team1'><span style='margin-top: 5%;float:left'>Team A</span><span style='margin-top: 5%;float:right'>" + tileScoreView["t1"] + "</span></li>";
+					var team2 = "<li class='team2'><span style='margin-top: 5%;float:left'>Team B</span><span style='margin-top: 5%;float:right'>" + tileScoreView["t2"] + "</span></li>";
+
+					for (var player in players){
+						var underline = "";
+						if(player != turn){
+							underline = "style='opacity:.6;'";
+						}
+						if(tileScoreView[player] == 0 || tileScoreView[player] == "0%"){
+							underline = "style='opacity:.4;text-decoration:line-through;'";
+						}
+						var player = players[player];
+						var divClass = "player" + player["startPoint"] + "-" + teams;
+						if(player["type"] != "empty" && player["active"]){
+							var score = tileScoreView["p" + (player["startPoint"] + 1)];
+							if(player["team"] == 1){
+								if(player["type"] != "player"){
+									team1 += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'>A.I. (" + player["type"] + "): </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+								}else{
+									team1 += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'  class='" + divClass + "'>Player: </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+								}
+							}else{
+								if(player["type"] != "player"){
+									team2 += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'>A.I. (" + player["type"] + "): </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+								}else{
+									team2 += "<li " + underline + " class='" + divClass + "'><span style='text-decoration:inherit;margin-top: 5%;float:left'  class='" + divClass + "'>Player: </span><span style='margin-top: 5%;float:right'>" + score + "</span></li>";
+								}
+							}
+						}
+					}
+					board += team1 + "<li>&nbsp;</li>" + team2;
+				}
+				board += "</ul>";
+				$("#testBoard").html(board);
+				if(win == 0){
+					$("#winCond").html("<strong>Obliteration Mode</strong><br/>Convert all enemy tiles to win.");
+				}else{
+					$("#winCond").html("<strong>Domination Mode</strong><br/>Control 70% of the play area to win.");
+				}
+			}
+
+            function tileAction(tileID){
+				if(disabled){
+					testArray.push(tileID);
+					tiles.children[tileID].turret.destroy();
+				}
+				if(!turnRunning && !gameOver){
+	                tile = tiles.children[tileID];
+	                if(tile.form == turn){
+						if(sound){
+							audio2.play();
+						}
+						turnRunning = true;
+	                    tile.turret.angle = tile.turret.angle + 10;
+	                }
+				}
+            }
+			function swapImage(tile){
+				tile.loadTexture(turn);
+				tile.animations.play("fadein");
+			}
+			function test(tile){
+				converting2 = true;
+				tiles.forEach(function(tile){
+					if(tile.form != "empty" && tile.turret){
+						tile.turret.frame = 0;
+						tile.turret.loadTexture(tile.form, 0);
+					}
+				});
+			}
+			function findMove(){
+				var moveOptions = [];
+				bestMove = 0;
+				bestMove2 = 0;
+				currentAngle = 60;
+				while(bestMove == 0 && winner == 0){
+					tiles.forEach(function(tile){
+	                    if (tile.form == turn){
+							newMove = calculateMove(tile.tileIndex, currentAngle);
+							if(newMove["moves"] != 0){
+								moveOptions.push(newMove);
+							}
+						}
+					});
+					moveOptions.sort(compare);
+					if(moveOptions.length > 0){
+						bestMove = 1;
+						if(players[turn].type == "easy"){
+							bestMove2 = moveOptions[0]["tileID"];
+						}else if(players[turn].type == "hard"){
+							bestMove2 = moveOptions[moveOptions.length - 1]["tileID"];
+						}else{
+							bestMove2 = moveOptions[Math.floor(Math.random() * (moveOptions.length - 1))]["tileID"];
+						}
+					}
+					currentAngle = currentAngle + 60;
+				}
+				return(bestMove2);
+			}
+			function resetForms(){
+				tiles.forEach(function(tile){
+					if(tile.turret){
+						if(tile.turret.key != "p1"){
+							tile.form = tile.turret.key;
+						}else if(tile.turret.frame == 0){
+							tile.form = "p1";
+						}else{
+							tile.form = "empty";
+						}
+					}
+				});
+			}
+			function calculateMove(tileID, currentAngle){
+				var oldType = "";
+				var modifier = 1;
+				var returnArray = [];
+				returnArray["tileID"] = tileID;
+				tiles.children[tileID].turret.angle = tiles.children[tileID].turret.angle + currentAngle;
+				var testList = [];
+				var convertTiles = getConvertingTiles(turn);
+				while(convertTiles.length > 0){
+					convertTiles.forEach(function(tileIndex){
+						testList.push(tileIndex);
+						if(oldType == ""){
+							oldType = tiles.children[tileIndex].form;
+							if(oldType == "empty"){
+								modifier = 1;
+							}else if(players[oldType].team == players[turn].team){
+								modifier = .1;
+							}else{
+								if(players[turn].type == "easy"){
+									modifier = .5;
+								}else if(players[turn].type == "medium"){
+									modifier = 1;
+								}else if(players[turn].type == "hard"){
+									modifier = 3;
+								}
+							}
+						}
+						tiles.children[tileIndex].form = turn;
+					});
+					convertTiles = getConvertingTiles(turn);
+				}
+				returnArray["moves"] = testList.length * modifier;
+				resetForms();
+				tiles.children[tileID].turret.angle = tiles.children[tileID].turret.angle - currentAngle;
+				return returnArray;
+			}
+			function findNeighbours(tileIndex){
+				try{
+					tileX = tiles.children[tileIndex].x;
+					tileY = tiles.children[tileIndex].y;
+					tiles.children[tileIndex].neighbours = [];
+					tiles.forEach(function(tile){
+						if(tile.getBounds().contains(tileX, tileY - 30)){
+							tiles.children[tileIndex].neighbours['-90'] = tile;
+						}else if(tile.getBounds().contains(tileX, tileY + 30)){
+							tiles.children[tileIndex].neighbours['90'] = tile;
+						}else if(tile.getBounds().contains(tileX + 20, tileY + 12)){
+							tiles.children[tileIndex].neighbours['30'] = tile;
+						}else if(tile.getBounds().contains(tileX + 20, tileY - 12)){
+							tiles.children[tileIndex].neighbours['-30'] = tile;
+						}else if(tile.getBounds().contains(tileX - 20, tileY + 12)){
+							tiles.children[tileIndex].neighbours['150'] = tile;
+						}else if(tile.getBounds().contains(tileX - 20, tileY - 12)){
+							tiles.children[tileIndex].neighbours['-150'] = tile;
+						}
+					});
+				}catch(err){}
+			}
+			function checkTiles(){
+				converting2 = false;
+				if(turnRunning){
+					tileScore["p1"] = 0;
+					tileScore["p2"] = 0;
+					tileScore["p3"] = 0;
+					tileScore["p4"] = 0;
+					tileScore["p5"] = 0;
+					tileScore["p6"] = 0;
+					tileScore["empty"] = 0;
+					tiles.forEach(function(tile){
+						tileScore[tile.form]++;
+					});
+					var convertTiles = getConvertingTiles(turn);
+					if(convertTiles.length == 0){
+						converting = false;
+						converting2 = false;
+						turnRunning = false;
+						previousTurn = turn;
+						var oldTurn = turn;
+						var nextTurn = true;
+						while(nextTurn && winner == 0){
+							if(turn == "p1"){
+								turn = "p2";
+							}else if(turn == "p2"){
+								turn = "p3";
+							}else if(turn == "p3"){
+								turn = "p4";
+							}else if(turn == "p4"){
+								turn = "p5";
+							}else if(turn == "p5"){
+								turn = "p6";
+							}else if(turn == "p6"){
+								turn = "p1";
+							}
+							if(win == 0){
+								if(oldTurn == turn){
+									winner = turn;
+								}else if (tileScore["p2"] + tileScore["p4"] + tileScore["p6"] == 0){
+									winner = "team1"
+								}else if (tileScore["p1"] + tileScore["p3"] + tileScore["p5"] == 0){
+									winner = "team2"
+								}else if(tileScore[turn] != 0){
+									nextTurn = false;
+								}
+							}else{
+								if(teams != 1){
+									if((Math.round((tileScore[oldTurn])/turretCounter * 1000) / 10) >= 70 ){
+										 winner = oldTurn;
+									}else if(oldTurn == turn){
+ 										winner = turn;
+ 									}else if(tileScore[turn] != 0){
+  										nextTurn = false;
+  									}
+								}else{
+									if (tileScore["p1"] + tileScore["p3"] + tileScore["p5"] == 0){
+										winner = "team2"
+									}else if (tileScore["p2"] + tileScore["p4"] + tileScore["p6"] == 0){
+										winner = "team1"
+									}else if((Math.round((tileScore["p1"] + tileScore["p3"] + tileScore["p5"])/turretCounter * 1000) / 10) >= 70 ){
+										winner = "team1";
+									}else if((Math.round((tileScore["p2"] + tileScore["p4"] + tileScore["p6"])/turretCounter * 1000) / 10) >= 70 ){
+										winner = "team2";
+									}else if(tileScore[turn] != 0){
+										nextTurn = false;
+									}
+								}
+							}
+						}
+						turnCheck = true;
+					}
+
+					convertTiles.forEach(function(tileIndex){
+						if(tiles.children[tileIndex].form == "empty"){
+							tiles.children[tileIndex].turret.loadTexture(turn);
+							tiles.children[tileIndex].turret.animations.play("fadein");
+						}else{
+							tiles.children[tileIndex].turret.animations.play("fadeout");
+						}
+						tiles.children[tileIndex].form = turn;
+					});
+				}
+			}
+			function tileClick(tile){
+				tileAction(tile.base.tileIndex, false);
+			}
+			function createTile(x, y, k){
+				var overlap = false;
+				tiles.forEach(function(tile){
+					if(tile.posX == x && tile.posY == y){
+						overlap = true;
+					}
+				});
+				if(!overlap){
+					tile = game.add.sprite(x, y, 'tile');
+					tile.anchor.setTo(0.5, 0.5);
+					tile.posX = x;
+					tile.posY = y;
+					if(boards[boardID]["emptyTiles"].indexOf(k.toString()) == -1){
+						turretCounter++;
+						tile.turret = game.add.sprite(tile.x , tile.y, 'p1');
+						tile.turret.base = tile;
+						tile.turret.anchor.setTo(0.5, 0.5);
+						tile.listen = game.add.sprite(tile.x , tile.y, 'blank');
+						tile.listen.base = tile;
+						tile.listen.anchor.setTo(0.5, 0.5);
+						game.physics.arcade.enable(tile.listen);
+						tile.listen.body.enable;
+
+						a1 = tile.turret.animations.add("fadeout", [0,1,2,3], 80);
+						a2 = tile.turret.animations.add("fadein", [3,2,1,0], 80);
+
+						a1.onComplete.add(swapImage, this);
+						a2.onComplete.add(test, this);
+
+						tile.tileIndex = k;
+						tile.listen.inputEnabled = true;
+						tile.neighbours = new Array();
+						tile.listen.events.onInputDown.add(tileClick, this);
+
+						var startingPoint = false;
+						for (var player in players){
+							if(players[player]["type"] != "empty" && boards[boardID]["startPoints"][players[player]["startPoint"]] == k){
+								startingPoint = true;
+								tile.turret.frame = 0;
+								tile.form = player;
+								tile.turret.loadTexture(players[player]["image"], 0);
+								tile.turret.angle = boards[boardID]["startRotations"][players[player]["startPoint"]];
+								players[player]["active"] = true;
+							}
+						}
+
+						if(!startingPoint){
+							tile.turret.frame = 3
+							tile.form = 'empty'
+							tile.turret.angle = Math.floor((Math.random() * 6)) * 60 + 30;
+						}
+					}
+					return tile;
+				}else{
+					return false;
+				}
+			}
+			function drawBoard(){
+				game.stage.backgroundColor = '#1e2024';
+				Math.seedrandom(gameID);
+				tiles = game.add.group();
+				var index = 0;
+				var posXDiff = 0;
+				var posYDiff = 0;
+				var position = 0;
+				if (boards[boardID].shape == "hex"){
+					var rings = boards[boardID].size;
+					var posX = 250;
+					var posY = 286;
+					for (var i = 0; i < rings; i++) {
+						posY = posY + 24;
+						for (var j = 1; j < 8; j++) {
+							for (var k = 0; k < i + 1; k++) {
+								posX = posX + posXDiff;
+								posY = posY + posYDiff;
+								newTile = createTile(posX, posY, index);
+								if(newTile){
+									tiles.add(newTile);
+									index++;
+								}
+							}
+							if(j == 1){
+								posYDiff = -12;
+								posXDiff = 20;
+							}else if(j == 2){
+								posYDiff = -24;
+								posXDiff = 0;
+							}else if(j == 3){
+								posYDiff = -12;
+								posXDiff = -20;
+							}else if(j == 4){
+								posYDiff = 12;
+								posXDiff = -20;
+							}else if(j == 5){
+								posYDiff = 24;
+								posXDiff = 0;
+							}else if(j == 6){
+								posYDiff = 12;
+								posXDiff = 20;
+							}else{
+								posYDiff = 0;
+								posXDiff = 0;
+							}
+						}
+					}
+					posY = 286;
+					posX = 250;
+					newTile = createTile(posX, posY, index);
+					if(newTile){
+						tiles.add(newTile);
+					}
+				}else if (boards[boardID].shape == "rectangle"){
+					index = 0;
+					if(boards[boardID].size == "large"){
+						posX = 50;
+						posY = 56;
+						for (var i = 0; i < 20; i++) {
+							for (var j = 0; j < 11; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+						posX = 70;
+						posY = 68;
+						for (var i = 0; i < 19; i++) {
+							for (var j = 0; j < 10; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+					}else if(boards[boardID].size == "medium"){
+						posX = 110;
+						posY = 106;
+						for (var i = 0; i < 16; i++) {
+							for (var j = 0; j < 8; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+						posX = 130;
+						posY = 118;
+						for (var i = 0; i < 15; i++) {
+							for (var j = 0; j < 7; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+					}else if(boards[boardID].size == "small"){
+						posX = 170;
+						posY = 178;
+						for (var i = 0; i < 10; i++) {
+							for (var j = 0; j < 5; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+						posX = 190;
+						posY = 190;
+						for (var i = 0; i < 9; i++) {
+							for (var j = 0; j < 4; j++) {
+								newTile = createTile(posX + (j * 40),posY,index);
+								tiles.add(newTile);
+								index++;
+							}
+							posY = posY + 24;
+						}
+					}
+				}
+				boardID = boards[boardID]["boardID"];
+			}
+            function getConvertingTiles(type){
+                var convertTiles = [];
+                tiles.forEach(function(tile){
+                    if (tile.form == type){
+						if(typeof tile.neighbours["-90"] !== 'undefined'){
+	                        if(typeof tile.neighbours["-90"].turret !== 'undefined'){
+	                            if(tile.turret.angle == -90 && tile.neighbours["-90"].form != type){
+	                                convertTiles.push(tile.neighbours["-90"].tileIndex);
+	                            }else if(tile.neighbours["-90"].turret.angle == 90 && tile.neighbours["-90"].form != type){
+	                                convertTiles.push(tile.neighbours["-90"].tileIndex);
+	                            }
+	                        }
+						}
+						if(typeof tile.neighbours["-30"] !== 'undefined'){
+							if(typeof tile.neighbours["-30"].turret !== 'undefined'){
+	                            if(tile.turret.angle == -30 && tile.neighbours["-30"].form != type){
+	                                convertTiles.push(tile.neighbours["-30"].tileIndex);
+	                            }else if(tile.neighbours["-30"].turret.angle == 150 && tile.neighbours["-30"].form != type){
+	                                convertTiles.push(tile.neighbours["-30"].tileIndex);
+	                            }
+	                        }
+						}
+						if(typeof tile.neighbours["-150"] !== 'undefined'){
+							if(typeof tile.neighbours["-150"].turret !== 'undefined'){
+	                            if(tile.turret.angle == -150 && tile.neighbours["-150"].form != type){
+	                                convertTiles.push(tile.neighbours["-150"].tileIndex);
+	                            }else if(tile.neighbours["-150"].turret.angle == 30 && tile.neighbours["-150"].form != type){
+	                                convertTiles.push(tile.neighbours["-150"].tileIndex);
+	                            }
+	                        }
+						}
+						if(typeof tile.neighbours["30"] !== 'undefined'){
+							if(typeof tile.neighbours["30"].turret !== 'undefined'){
+	                            if(tile.turret.angle == 30 && tile.neighbours["30"].form != type){
+	                                convertTiles.push(tile.neighbours["30"].tileIndex);
+	                            }else if(tile.neighbours["30"].turret.angle == -150 && tile.neighbours["30"].form != type){
+	                                convertTiles.push(tile.neighbours["30"].tileIndex);
+	                            }
+	                        }
+						}
+						if(typeof tile.neighbours["150"] !== 'undefined'){
+							if(typeof tile.neighbours["150"].turret !== 'undefined'){
+		                        if(tile.turret.angle == 150 && tile.neighbours["150"].form != type){
+		                            convertTiles.push(tile.neighbours["150"].tileIndex);
+		                        }else if(tile.neighbours["150"].turret.angle == -30 && tile.neighbours["150"].form != type){
+		                            convertTiles.push(tile.neighbours["150"].tileIndex);
+		                        }
+		                    }
+						}
+						if(typeof tile.neighbours["90"] !== 'undefined'){
+							if(typeof tile.neighbours["90"].turret !== 'undefined'){
+	                            if(tile.turret.angle == 90 && tile.neighbours["90"].form != type){
+	                                convertTiles.push(tile.neighbours["90"].tileIndex);
+	                            }else if(tile.neighbours["90"].turret.angle == -90 && tile.neighbours["90"].form != type){
+	                                convertTiles.push(tile.neighbours["90"].tileIndex);
+	                            }
+	                        }
+						}
+                    }
+                });
+                return convertTiles;
+            }
+			function compare(a,b) {
+				if (a.moves < b.moves)
+					return -1;
+				if (a.moves > b.moves)
+					return 1;
+				return 0;
+			}
+
+			$( document ).ready(function() {
+
+				if(oldTeams == -1 || boardID == "h-3-l" || boardID == "h-3-m" || boardID == "h-3-s"){
+					$("#testBoard").css("top", "240");
+					$("#testBoard").css("height", "140");
+				}
+
+				$("a#inline").fancybox({
+					'hideOnContentClick': true
+				});
+				$("a#help").fancybox({
+					'hideOnContentClick': true
+				});
+				$('#mute').click(function(){
+					$(this).toggleClass("muted");
+					sound = !sound;
+					if(sound){
+						audio.play();
+					}
+				});
+				if(!sound){
+					$("#mute").addClass("muted");
+				}
+				$("#menu").click(function(){
+					soundCondition = "sound=0";
+					if(sound){
+						audio.play();
+						soundCondition = "sound=1";
+					}
+					var url="menu.html?" + soundCondition;
+					window.location.href = url;
+				});
+			});
+
+		</script>
+	</head>
+	<body style="overflow:hidden;background-image: url('images/bg.png');">
+	<script src="chs.js?202106041511"></script>
+<script src="//g8hh.com/zh/core.js"></script>
+		<div class="unselectable" id="wrapper" style="font-size: 0; overflow: hidden;">
+		</div>
+		<div id="testBoard" class="Scoreboard" style="position: absolute; left: 495px; top: 125px; font-size:24px; height:340px; margin-right:14px">
+		</div>
+		<div id="menu" style="color:#0082FF;cursor:pointer;font-size: 20px;position: fixed;bottom: 0px;right: 5px;">Main Menu</div>
+		<div id="winCond" style="font-size: 16px;position: fixed;top: 0px;text-align:right;right: 5px;color:#0082FF;text-shadow: 0px 0px 2px #0082FF;"></div>
+		</div>
+		<a style="color:#0082FF;cursor:pointer;font-size: 20px;" id="help" href="#help2">
+			<div style="font-size: 20px;position: fixed;bottom: 0px;text-align:right;right: 300px;color:#0082FF;">
+				How To Play
+			</div>
+		</a>
+		<a style="display:none" id="inline" href="#data"></a>
+		<div style="display:none">
+			<div id="data" style="background-color:black;">
+				<div id="winnerNotice"></div>
+			</div>
+			<div id="help2" style="width: 200px; color: #EEE;">
+				Click your color's node to rotate it clockwise 60 degrees and expand your territory:
+				<img src="images/help.gif" alt="help" height="148" width="163" style="margin:3px;margin-left:12px">
+				That's about it! simple, eh?
+			</div>
+		</div>
+		<div id="mute"></div>
+	</body>
+</html>
+
+<!--客服 开始-->
+<link rel="stylesheet" href="//g8hh.com/static/css/kf.css" type="text/css" media="screen" charset="utf-8">
+<script src="//g8hh.com/static/js/kf.js"></script>
+<!-- 客服 结束 -->
+<!--站长统计-->
+    <div style="display: none">
+        <script type="text/javascript" src="//s13.cnzz.com/z_stat.php?id=1266957935&web_id=1266957935"></script>
+    </div>
