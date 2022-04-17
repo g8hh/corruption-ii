@@ -1,0 +1,332 @@
+<html>
+	<head>
+<meta charset="utf-8" />
+		<script type="text/javascript" src="JS/jquery.js"></script>
+		<title>Corruption</title>
+		<style>
+		@font-face {
+			font-family: "myfontbold";
+			src: url("font.bold.woff") format('woff');
+		}
+        @font-face {
+			font-family: "myfont";
+			src: url("font.woff") format('woff');
+		}
+		body {
+		    font-family: myfont;
+            color:#0082FF;
+			-webkit-user-select: none; /* Safari */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE10+/Edge */
+			user-select: none; /* Standard */
+		}
+		td{
+			vertical-align:top;
+		}
+        .toggleButton {
+            width: 124px;
+            height: 24px;
+            background-image: url(images/radioButton.png);
+            margin: 6px;
+            font-size: 14px;
+            padding-left: 8px;
+            cursor: pointer;
+        }
+        .optionList {
+            display:inline-block;
+        }
+        .checked {
+            background-position-y: -24px;
+        }
+        .toggleBoard {
+            width:100px;
+            height:100px;
+            border: 2px solid #FF510E;
+            display:inline-block;
+            margin:20px;
+            cursor: pointer;
+			margin-top: 3px;
+        }
+        .selected{
+            border: 2px solid #0082FF;
+        }
+		#mute{
+			width:16px;
+			height:16px;
+			background-image: url(images/unmute.png);
+			position: fixed;
+		    right: 11px;
+		    bottom: 11px;
+			cursor: pointer;
+		}
+		.muted{
+			background-image: url(images/mute.png) !important;
+		}
+        #start {
+            text-align: center;
+            font-size: 40px;
+            font-family: myfontbold;
+            cursor: pointer;
+            bottom: -5px;
+            position: absolute;
+            left: 300px;
+            text-align: center;
+        }
+        #logo {
+            text-align: center;
+            font-size: 64px;
+            background-image: url(images/logo4.png);
+            width: 104%;
+            height: 130px;
+            background-size: cover;
+            background-position-y: -270px;
+            margin-left: -14px;
+        }
+		</style>
+		<script>
+			try{
+				var kongregate = parent.kongregate;
+				kongregate.stats.submit("init", 1);
+				console.log("kong object found")
+			}catch (ex){
+				console.log("kong object NOT found")
+			}
+			var sound = true;
+			var audio = new Audio('click2.wav');
+			var url = new URL(window.location.href);
+			var sound = url.searchParams.get("sound");
+
+			if(sound == null || sound == 1){
+				sound = true;
+			}else{
+				sound = false;
+			}
+
+			preload([
+				'images/boards/h-1-1.png',
+				'images/boards/h-1-f.png',
+				'images/boards/h-1-t.png',
+				'images/boards/h-2-1.png',
+				'images/boards/h-2-f.png',
+				'images/boards/h-2-t.png',
+				'images/boards/h-3-1.png',
+				'images/boards/h-3-f.png',
+				'images/boards/h-3-t.png',
+				'images/boards/h-4-1.png',
+				'images/boards/h-4-f.png',
+				'images/boards/h-4-t.png',
+				'images/boards/s-1-1.png',
+				'images/boards/s-1-f.png',
+				'images/boards/s-1-t.png',
+				'images/boards/s-2-1.png',
+				'images/boards/s-2-f.png',
+				'images/boards/s-2-t.png',
+				'images/boards/s-3-1.png',
+				'images/boards/s-3-f.png',
+				'images/boards/s-3-t.png',
+				'images/boards/s-4-1.png',
+				'images/boards/s-4-f.png',
+				'images/boards/s-4-t.png'
+			])
+
+			function preload(arrayOfImages) {
+			    $(arrayOfImages).each(function(){
+			        $('<img/>')[0].src = this;
+			    });
+			}
+
+			function swapImages(){
+				var shape
+				var team
+				if($("#shapeToggleSquare").hasClass("checked")){
+					shape = "s"
+				}else{
+					shape = "h"
+				}
+
+				if($("#teamToggle1").hasClass("checked")){
+					team = "1"
+					$("#teamA").html("Player 1:");
+					$("#teamB").html("Player 2:");
+				}else if($("#teamToggleT").hasClass("checked")){
+					team = "t"
+					$("#teamA").html("Team A:");
+					$("#teamB").html("Team B:");
+				}else{
+					team = "f"
+					$("#teamA").html("Player:");
+					$("#teamB").html("Enemies:");
+				}
+
+				$("#toggleBoard1").css("background-image", "url('images/boards/" + shape + "-1-" + team + ".png')");
+				$("#toggleBoard2").css("background-image", "url('images/boards/" + shape + "-2-" + team + ".png')");
+				$("#toggleBoard3").css("background-image", "url('images/boards/" + shape + "-3-" + team + ".png')");
+				$("#toggleBoard4").css("background-image", "url('images/boards/" + shape + "-4-" + team + ".png')");
+
+				$("#toggleBoard1").data("value", "&boardID=" + shape + "-1");
+				$("#toggleBoard2").data("value", "&boardID=" + shape + "-2");
+				$("#toggleBoard3").data("value", "&boardID=" + shape + "-3");
+				$("#toggleBoard4").data("value", "&boardID=" + shape + "-4");
+
+			}
+
+            $( document ).ready(function() {
+				swapImages();
+                $( ".sizeToggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".sizeToggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+                });
+                $( ".shapeToggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".shapeToggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+					swapImages();
+                });
+                $( ".winToggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".winToggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+                });
+				$( ".teamToggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".teamToggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+					swapImages();
+                });
+				$( ".team1Toggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".team1Toggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+                });
+				$( ".team2Toggle" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".team2Toggle" ).removeClass("checked");
+                    $(this).addClass("checked");
+                });
+                $( ".toggleBoard" ).click(function() {
+					if(sound){
+						audio.play();
+					}
+                    $( ".toggleBoard" ).removeClass("selected");
+                    $(this).addClass("selected");
+                });
+                $('#start').click(function(){
+					soundCondition = "sound=0";
+					if(sound){
+						audio.play();
+						soundCondition = "sound=1";
+					}
+
+
+
+                    var url="game.html?" + soundCondition +
+						$('.winToggle.checked').data()["value"] +
+						$('.teamToggle.checked').data()["value"] +
+						$('.team1Toggle.checked').data()["value"] +
+						$('.team2Toggle.checked').data()["value"] +
+						$('.toggleBoard.selected').data()["value"] +
+						$('.sizeToggle.checked').data()["value"];
+                    console.log(url);
+                    window.location.href = (url);
+                });
+				$('#mute').click(function(){
+					$(this).toggleClass("muted");
+					sound = !sound;
+					if(sound){
+						audio.play();
+					}
+				});
+				if(!sound){
+					$("#mute").addClass("muted");
+				}
+            });
+		</script>
+	</head>
+	<body style="overflow:hidden;background-image: url('images/bg.png');">
+       <script src="chs.js?202106041511"></script>
+<script src="//g8hh.com/zh/core.js"></script>
+        <div id="logo"></div>
+		<div style="color:#FF510E; text-align:center;font-size:24px;">A back and forth struggle for power.</div>
+		<table style="width:100%">
+			<tr>
+				<td>
+					<div>
+						Board Size:
+						<div style="margin-top: 0px;" class="toggleButton sizeToggle" data-value="-l">Large</div>
+						<div class="toggleButton sizeToggle checked" data-value="-m">Medium</div>
+						<div class="toggleButton sizeToggle" data-value="-s">Small</div>
+					</div>
+				</td>
+				<td>
+					<div>
+						Board Shape:
+						<div style="margin-top: 0px;" class="toggleButton shapeToggle checked">Hexaganal</div>
+						<div id="shapeToggleSquare" class="toggleButton shapeToggle">Square</div>
+					</div>
+				</td>
+				<td>
+					<div>
+						Alliances:
+						<div id="teamToggle1" style="margin-top: 0px;" class="toggleButton teamToggle checked" data-value="&team=-1">1 VS 1</div>
+						<div id="teamToggleT" class="toggleButton teamToggle" data-value="&team=1">Teams</div>
+						<div class="toggleButton teamToggle" data-value="&team=0">Free For All</div>
+					</div>
+				</td>
+				<td>
+					<div>
+						Win Conditions:
+						<div style="margin-top: 0px;" class="toggleButton winToggle checked" data-value="&win=1">Domination</div>
+						<div class="toggleButton winToggle" data-value="&win=0">Obliteration</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+        <div style="width: 100%;text-align: center;" class="optionList">
+            <div>Game Board:</div>
+            <div id="toggleBoard1" class="toggleBoard selected" data-value="1"></div>
+            <div id="toggleBoard2" class="toggleBoard" data-value="2"></div>
+            <div id="toggleBoard3" class="toggleBoard" data-value="3"></div>
+            <div id="toggleBoard4" class="toggleBoard" data-value="4"></div>
+        </div>
+		<table>
+			<tr>
+				<td id="teamA" style="vertical-align:middle;width: 75px;">Team A: </td>
+				<td><div class="toggleButton team1Toggle checked" data-value="&aggr1=1">Player</div></td>
+				<td><div class="toggleButton team1Toggle" data-value="&aggr1=2">Easy A.I.</div></td>
+				<td><div class="toggleButton team1Toggle" data-value="&aggr1=3">Medium A.I.</div></td>
+				<td><div class="toggleButton team1Toggle" data-value="&aggr1=4">Hard A.I.</div></td>
+			</tr>
+			<tr>
+				<td id="teamB" style="vertical-align:middle;">Team B: </td>
+				<td><div class="toggleButton team2Toggle" data-value="&aggr2=1">Player</div></td>
+				<td><div class="toggleButton team2Toggle checked" data-value="&aggr2=2">Easy A.I.</div></td>
+				<td><div class="toggleButton team2Toggle" data-value="&aggr2=3">Medium A.I.</div></td>
+				<td><div class="toggleButton team2Toggle" data-value="&aggr2=4">Hard A.I.</div></td>
+			</tr>
+
+		</table>
+        <div id="start">START</div>
+		<div id="mute"></div>
+	</body>
+</html>
+<!--客服 开始-->
+<link rel="stylesheet" href="//g8hh.com/static/css/kf.css" type="text/css" media="screen" charset="utf-8">
+<script src="//g8hh.com/static/js/kf.js"></script>
+<!-- 客服 结束 -->
+<!--站长统计-->
+    <div style="display: none">
+        <script type="text/javascript" src="//s13.cnzz.com/z_stat.php?id=1266957935&web_id=1266957935"></script>
+    </div>
